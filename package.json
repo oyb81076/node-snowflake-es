@@ -9,7 +9,8 @@
     "build": "tsc -p tsconfig.build.json",
     "performance": "node ./scripts/performance.js",
     "lint:ts": "tsc --noEmit",
-    "lint:es": "eslint --ext .ts src"
+    "lint:es": "eslint --ext .ts src",
+    "pub": "npm publish --registry https://registry.npmjs.org"
   },
   "exports": {
     ".": {
