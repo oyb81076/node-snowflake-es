@@ -3,6 +3,7 @@
   "type": "module",
   "version": "1.0.0",
   "license": "MIT",
+  "repository": "https://github.com/oyb81076/node-snowflake-es.git",
   "scripts": {
     "test": "jest",
     "build": "tsc -p tsconfig.build.json",

@@ -25,7 +25,7 @@ SNOWFLAKE_WORKER_ID=1 node xxxx.js
 
 - bit位说明: (timestamp | worker | clock | sequence)
 - 时间位(timestamp): 41bit 最大支持到 2155-05-15T07:35:11.104Z
-- 机器位(worker): 7bit 0 ~ 128
+- 机器位(worker): 7bit 0 ~ 127
 - 时钟位(clock): 2bit 0 ~ 3
 - 序列号(sequence): 12bit 0 ~ 4095
 
