@@ -1,0 +1,17 @@
+import { createSnowflake } from '../src/snowflake.js';
+
+jest.mock('node:crypto', () => ({
+  randomInt: () => 0,
+}));
+
+it('Clock moved backwards', () => {
+  const current = Date.now();
+  const times = [current, current - 1, current - 2, current - 3, current - 4];
+  jest.spyOn(Date, 'now').mockImplementation(() => times.shift()!);
+  const snowflake = createSnowflake();
+  expect(snowflake()).toEqual(((BigInt(current) - 1288834974657n - 0n) << 22n) + (0n << 12n));
+  expect(snowflake()).toEqual(((BigInt(current) - 1288834974657n - 1n) << 22n) + (1n << 12n));
+  expect(snowflake()).toEqual(((BigInt(current) - 1288834974657n - 2n) << 22n) + (2n << 12n));
+  expect(snowflake()).toEqual(((BigInt(current) - 1288834974657n - 3n) << 22n) + (3n << 12n));
+  expect(() => snowflake()).toThrowError('Clock moved backwards');
+});
