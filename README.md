@@ -13,15 +13,15 @@ console.log(snowflake());
 
 ```js
 import { createSnowflake } from 'node-snowflake-es';
-const snowflake = createSnowflake(1);
+const snowflake = createSnowflake({ workerId: 1 });
 ```
 
 ```sh
 # 修改snowflake workerId 默认值
-SNOWFLAKE_WORKER_ID=1 node xxxx.js
+SNOWFLAKE_WORKER_ID=1 SNOWFLAKE_RANDOM_SEQUENCE=8 node xxxx.js
 ```
 
-## BIT位说明
+## 默认BIT位说明
 
 - bit位说明: (timestamp | worker | clock | sequence)
 - 时间位(timestamp): 41bit 最大支持到 2155-05-15T07:35:11.104Z
@@ -32,9 +32,9 @@ SNOWFLAKE_WORKER_ID=1 node xxxx.js
 ## 支持特性
 
 - 支持128个不同的workerId
-- 最大id生成速度 16k/ms (macos下平均4.5k/ms)
+- 最大id生成速度 4k/ms
 - 支持时钟回拨, 允许连续三次时钟回拨
-- 支持首个id位0~255的随机数 (便于分表分库)
+- 支持首个id位为随机数 (便于分表分库)
 
 ## 性能测试
 

@@ -1,44 +1,31 @@
 import { randomInt } from 'node:crypto';
 
-const WORKER_BITS = 7;
-const CLOCK_BITS = 2;
-const SEQUENCE_BITS = 12;
-const TIMESTAMP_SHIFT = WORKER_BITS + CLOCK_BITS + SEQUENCE_BITS; // 21
-const TW_EPOCH = 1451606400000; // 2016-01-01
-
-function createSequence() {
-  const sequenceMask: number = (1 << SEQUENCE_BITS) - 1;
+interface CreateSequenceOptions {
+  randomSequence: number;
+  sequenceBits: number;
+  clockBits: number;
+}
+function createSequence({ randomSequence, sequenceBits, clockBits }: CreateSequenceOptions) {
+  const sequenceMask = (1 << sequenceBits) - 1;
   const { now } = Date;
   let sequence = 0;
-  const clocks = [...Array<void>(1 << CLOCK_BITS)].map((_, i) => ({
+  const clocks = [...Array<void>(1 << clockBits)].map((_, i) => ({
     lastTimestamp: 0,
-    clockId: i << SEQUENCE_BITS,
+    clockId: i << sequenceBits,
   }));
   let { lastTimestamp, clockId } = clocks[0];
-  const result: [timestamp: number, clockAndSeq: number] = [0, 0];
 
-  return function next(): [timestamp: number, clockAndSeq: number] {
+  return function next(): [timestamp: number, clock: number, sequence: number] {
     let timestamp = now();
     if (timestamp > lastTimestamp) {
-      sequence = randomInt(256);
+      sequence = randomSequence && randomInt(randomSequence);
     } else if (timestamp === lastTimestamp) {
       sequence += 1;
       if (sequence > sequenceMask) {
-        const clock = clocks
-          .filter((x) => x.clockId !== clockId && x.lastTimestamp < timestamp)
-          .sort((a, b) => b.lastTimestamp - a.lastTimestamp)[0];
-        if (clock) {
-          // Borrow a clock
-          clocks.find((x) => x.clockId === clockId)!.lastTimestamp = lastTimestamp;
-          lastTimestamp = clock.lastTimestamp;
-          clockId = clock.clockId;
-          sequence = 0;
-        } else {
-          do {
-            timestamp = now();
-          } while (timestamp === lastTimestamp);
-          sequence = randomInt(256);
-        }
+        do {
+          timestamp = now();
+        } while (timestamp === lastTimestamp);
+        sequence = randomSequence && randomInt(randomSequence);
       }
     } else {
       clocks.find((x) => x.clockId === clockId)!.lastTimestamp = lastTimestamp;
@@ -51,28 +38,55 @@ function createSequence() {
       }
       lastTimestamp = clock.lastTimestamp;
       clockId = clock.clockId;
-      sequence = randomInt(256);
+      sequence = randomSequence && randomInt(randomSequence);
     }
     lastTimestamp = timestamp;
-    result[0] = timestamp;
-    result[1] = clockId + sequence;
-    return result;
+    return [timestamp, clockId, sequence];
   };
 }
 
-export function createSnowflake(workerId = 0): () => bigint {
+interface Options {
+  // workerId
+  workerId?: number;
+  // 随机数字
+  randomSequence?: number;
+  workerBits?: number;
+  clockBits?: number;
+  sequenceBits?: number;
+  twEpoch?: number;
+}
+export function createSnowflake({
+  workerId = 0,
+  randomSequence = 0,
+  workerBits = 7,
+  clockBits = 2,
+  sequenceBits = 12,
+  twEpoch = 1451606400000, // 2016-01-01
+}: Options = {}): () => bigint {
   if (workerId < 0) throw new Error('workerId should greater then 0');
-  if (workerId > (1 << WORKER_BITS) - 1)
-    throw new Error(`workerId must less than maxDataCenterId-[${(1 << WORKER_BITS) - 1}]`);
-  const timestampShift = BigInt(TIMESTAMP_SHIFT); // 41
-  const twEpoch = TW_EPOCH; // 2016-01-01
-  const center = BigInt(workerId << (SEQUENCE_BITS + CLOCK_BITS));
-  const next = createSequence();
+  if (workerId > (1 << workerBits) - 1)
+    throw new Error(`workerId must less than maxDataCenterId-[${(1 << workerBits) - 1}]`);
+  if (randomSequence < 0) throw new Error('randomSequence should greater then 0');
+  if (randomSequence > 1 << (sequenceBits - 2)) throw new Error('randomSequence is too bigger');
+  if (workerBits + clockBits + sequenceBits > 22)
+    throw new Error('workerBits + clockBits + sequenceBits should lower then 22');
+  const timestampShift = BigInt(workerBits + clockBits + sequenceBits); // 41
+  const center = BigInt(workerId << (sequenceBits + clockBits));
+  const next = createSequence({ randomSequence, sequenceBits, clockBits });
   return function snowflake() {
-    const [timestamp, clockAndSeq] = next();
-    return (BigInt(timestamp - twEpoch) << timestampShift) + center + BigInt(clockAndSeq);
+    const [timestamp, clock, sequence] = next();
+    return (BigInt(timestamp - twEpoch) << timestampShift) + center + BigInt(clock + sequence);
   };
 }
-
-const snowflake = createSnowflake(parseInt(process.env.SNOWFLAKE_WORKER_ID || '0', 10));
+function tryParseInt(v: string | undefined): number | undefined {
+  return v ? parseInt(v, 10) : undefined;
+}
+const snowflake = createSnowflake({
+  workerId: tryParseInt(process.env.SNOWFLAKE_WORKER_ID),
+  randomSequence: tryParseInt(process.env.SNOWFLAKE_RANDOM_SEQUENCE),
+  workerBits: tryParseInt(process.env.SNOWFLAKE_WORKER_BITS),
+  clockBits: tryParseInt(process.env.SNOWFLAKE_CLOCK_BITS),
+  sequenceBits: tryParseInt(process.env.SNOWFLAKE_SEQUENCE_BITS),
+  twEpoch: tryParseInt(process.env.SNOWFLAKE_TW_EPOCH),
+});
 export default snowflake;
