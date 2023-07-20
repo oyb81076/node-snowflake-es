@@ -46,22 +46,26 @@ function createSequence({ randomSequence, sequenceBits, clockBits }: CreateSeque
 }
 
 interface Options {
-  // workerId
+  // workerId 默认0
   workerId?: number;
-  // 随机数字
+  // sequence 起始值随机数字 默认128
   randomSequence?: number;
+  // workerId 所占位数 默认7
   workerBits?: number;
+  // 时钟所占位数 默认2
   clockBits?: number;
+  // 序列号所占位数 默认12
   sequenceBits?: number;
+  // 时间偏移量, 默认为 1451606400000 (2016-01-01)
   twEpoch?: number;
 }
 export function createSnowflake({
   workerId = 0,
-  randomSequence = 0,
+  randomSequence = 128,
   workerBits = 7,
   clockBits = 2,
   sequenceBits = 12,
-  twEpoch = 1451606400000, // 2016-01-01
+  twEpoch = 1451606400000,
 }: Options = {}): () => bigint {
   if (workerId < 0) throw new Error('workerId should greater then 0');
   if (workerId > (1 << workerBits) - 1)
