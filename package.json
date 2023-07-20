@@ -3,7 +3,13 @@
   "type": "module",
   "version": "1.1.0",
   "license": "MIT",
+  "description": "支持时钟回拨的snowflake.js",
   "repository": "https://github.com/oyb81076/node-snowflake-es.git",
+  "keywords": [
+    "twitter",
+    "snowflake",
+    "clock moved backwards"
+  ],
   "scripts": {
     "test": "jest",
     "build": "tsc -p tsconfig.build.json",
