@@ -23,7 +23,7 @@ const snowflake = createSnowflake({
 });
 ```
 
-## 修改snowflake默认值
+## 通过环境变量修改snowflake默认值
 
 ```sh
  SNOWFLAKE_WORKER_ID=1 SNOWFLAKE_RANDOM_SEQUENCE=8 SNOWFLAKE_WORKER_BITS=7 SNOWFLAKE_CLOCK_BITS=2 SNOWFLAKE_SEQUENCE_BITS=12 SNOWFLAKE_TW_EPOCH=1451606400000 node xxxx.js
@@ -49,7 +49,7 @@ const snowflake = createSnowflake({
 - 支持时钟回拨, 允许连续三次时钟回拨
 - 支持首个id位为随机数 (便于分表分库)
 
-## 性能测试
+## 基准测试
 
-`pnpm build`
-`pnpm performance`
+- `pnpm build`
+- `pnpm benchmark`
