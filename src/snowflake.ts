@@ -44,7 +44,17 @@ function createSequence({ randomSequence, sequenceBits, clockBits }: CreateSeque
     return [timestamp, clockId, sequence];
   };
 }
-
+function tryParseInt(v: string | undefined): number | undefined {
+  return v ? parseInt(v, 10) : undefined;
+}
+export const SNOWFLAKE_DEFAULT_OPTIONS = Object.freeze<Required<Options>>({
+  workerId: tryParseInt(process.env.SNOWFLAKE_WORKER_ID) ?? 0,
+  randomSequence: tryParseInt(process.env.SNOWFLAKE_RANDOM_SEQUENCE) ?? 128,
+  workerBits: tryParseInt(process.env.SNOWFLAKE_WORKER_BITS) ?? 7,
+  clockBits: tryParseInt(process.env.SNOWFLAKE_CLOCK_BITS) ?? 2,
+  sequenceBits: tryParseInt(process.env.SNOWFLAKE_SEQUENCE_BITS) ?? 12,
+  twEpoch: tryParseInt(process.env.SNOWFLAKE_TW_EPOCH) ?? 1451606400000,
+});
 interface Options {
   // workerId 默认0
   workerId?: number;
@@ -60,13 +70,13 @@ interface Options {
   twEpoch?: number;
 }
 export function createSnowflake({
-  workerId = 0,
-  randomSequence = 128,
-  workerBits = 7,
-  clockBits = 2,
-  sequenceBits = 12,
-  twEpoch = 1451606400000,
-}: Options = {}): () => bigint {
+  workerId = SNOWFLAKE_DEFAULT_OPTIONS.workerId,
+  randomSequence = SNOWFLAKE_DEFAULT_OPTIONS.randomSequence,
+  workerBits = SNOWFLAKE_DEFAULT_OPTIONS.workerBits,
+  clockBits = SNOWFLAKE_DEFAULT_OPTIONS.clockBits,
+  sequenceBits = SNOWFLAKE_DEFAULT_OPTIONS.sequenceBits,
+  twEpoch = SNOWFLAKE_DEFAULT_OPTIONS.twEpoch,
+}: Options = SNOWFLAKE_DEFAULT_OPTIONS): () => bigint {
   if (workerId < 0) throw new Error('workerId should greater then 0');
   if (workerId > (1 << workerBits) - 1)
     throw new Error(`workerId must less than maxDataCenterId-[${(1 << workerBits) - 1}]`);
@@ -82,15 +92,6 @@ export function createSnowflake({
     return (BigInt(timestamp - twEpoch) << timestampShift) + center + BigInt(clock + sequence);
   };
 }
-function tryParseInt(v: string | undefined): number | undefined {
-  return v ? parseInt(v, 10) : undefined;
-}
-const snowflake = createSnowflake({
-  workerId: tryParseInt(process.env.SNOWFLAKE_WORKER_ID),
-  randomSequence: tryParseInt(process.env.SNOWFLAKE_RANDOM_SEQUENCE),
-  workerBits: tryParseInt(process.env.SNOWFLAKE_WORKER_BITS),
-  clockBits: tryParseInt(process.env.SNOWFLAKE_CLOCK_BITS),
-  sequenceBits: tryParseInt(process.env.SNOWFLAKE_SEQUENCE_BITS),
-  twEpoch: tryParseInt(process.env.SNOWFLAKE_TW_EPOCH),
-});
+
+const snowflake = createSnowflake();
 export default snowflake;
